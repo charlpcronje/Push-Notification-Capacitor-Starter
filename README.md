@@ -63,7 +63,7 @@ npm install -g @capacitor/cli
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/push-test.git
+git clone git@github.com:charlpcronje/Push-Notification-Capacitor-Starter.git
 ```
 
 2. Navigate to the project directory:
