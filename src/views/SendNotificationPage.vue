@@ -21,8 +21,6 @@
       </ion-item>
       <ion-button expand="block" @click="sendNotification">Send Notification</ion-button>
     </ion-content>
-
-    <debug-code-block ref="debugCodeBlock" />
   </ion-page>
 </template>
 
@@ -30,43 +28,26 @@
 import { ref } from 'vue';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonTextarea, IonButton } from '@ionic/vue';
 import { NotificationService } from '@/services/NotificationService';
-import DebugCodeBlock from '@/components/DebugCodeBlock.vue';
+import { Logger } from '@/services/logger.service';
 
 const userId = ref('');
 const title = ref('');
 const body = ref('');
-const debugCodeBlock = ref<InstanceType<typeof DebugCodeBlock> | null>(null);
 
 const sendNotification = async () => {
   if (title.value && body.value && userId.value) {
     try {
-      debugCodeBlock.value?.addLog({
-        action: 'Sending notification',
-        result: 'Calling NotificationService.sendNotification()',
-      });
       await NotificationService.sendNotification(title.value, body.value, Number(userId.value));
-      debugCodeBlock.value?.addLog({
-        action: 'Notification sent successfully',
-        result: 'alert(\'Notification sent successfully.\')',
-      });
-      alert('Notification sent successfully.');
+      Logger.log('Notification sent successfully');
       // Reset form
       title.value = '';
       body.value = '';
       userId.value = '';
     } catch (error) {
-      debugCodeBlock.value?.addLog({
-        action: 'Failed to send notification',
-        result: JSON.stringify(error),
-      });
-      alert(`Failed to send notification: ${error}`);
+      Logger.error('Failed to send notification:', error);
     }
   } else {
-    debugCodeBlock.value?.addLog({
-      action: 'Invalid form data',
-      result: 'alert(\'Please fill in all fields.\')',
-    });
-    alert('Please fill in all fields.');
+    Logger.warn('Please fill in all fields');
   }
 };
 </script>

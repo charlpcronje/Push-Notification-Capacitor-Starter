@@ -15,8 +15,6 @@
       <button type="submit">Login</button>
     </form>
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-
-    <debug-code-block ref="debugCodeBlock" />
   </div>
 </template>
 
@@ -24,50 +22,20 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { AuthService } from '@/services/auth.service';
-import DebugCodeBlock from '@/components/DebugCodeBlock.vue';
+import { Logger } from '@/services/logger.service';
 
 const email = ref('');
 const password = ref('');
 const errorMessage = ref('');
 const router = useRouter();
-const debugCodeBlock = ref<InstanceType<typeof DebugCodeBlock> | null>(null);
 
 const login = async () => {
   try {
-    debugCodeBlock.value?.addLog({
-      action: 'Logging in user',
-      result: 'Calling AuthService.login()',
-    });
-    const response = await AuthService.login(email.value, password.value);
-    debugCodeBlock.value?.addLog({
-      action: 'Login response received',
-      result: JSON.stringify(response),
-    });
-
-    if (response.token) {
-      const token = response.token;
-      debugCodeBlock.value?.addLog({
-        action: 'Storing token',
-        result: 'localStorage.setItem(\'token\', token)',
-      });
-      localStorage.setItem('token', token);
-
-      debugCodeBlock.value?.addLog({
-        action: 'Redirecting to user profile',
-        result: 'router.push(\'/user-profile\')',
-      });
-      router.push('/user-profile');
-    }
-  } catch (error: any) {
-    debugCodeBlock.value?.addLog({
-      action: 'Login error',
-      result: JSON.stringify(error),
-    });
-    if (error.response && error.response.status === 401) {
-      errorMessage.value = 'Invalid credentials';
-    } else {
-      errorMessage.value = 'An error occurred during login';
-    }
+    await AuthService.login(email.value, password.value);
+    router.push('/user-profile');
+  } catch (error) {
+    Logger.error('Login failed:', error);
+    errorMessage.value = 'Invalid credentials';
   }
 };
 </script>
