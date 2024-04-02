@@ -1,10 +1,12 @@
-# Push Notification Test App
+# Push Notification Capacitor Starter
 
-This repository contains an example implementation of a push notification test app using the Ionic framework with Capacitor. The app demonstrates user registration, login, profile management, and sending push notifications to specific users.
+This repository contains an example implementation of a push notification test app using the Ionic framework with Capacitor. The app demonstrates user registration, login, profile management, and sending push notifications to specific users using a backend API and Firebase Cloud Messaging.
+
+For Cordova and React-Native implementations [click here](./docs/otherImplementations.md)
 
 ## Table of Contents
 
-- [Push Notification Test App](#push-notification-test-app)
+- [Push Notification Capacitor Starter](#push-notification-capacitor-starter)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Requirements](#requirements)
@@ -19,6 +21,8 @@ This repository contains an example implementation of a push notification test a
     - [Development](#development)
     - [Android Build](#android-build)
     - [iOS Build](#ios-build)
+  - [Compiling App](#compiling-app)
+  - [Handle Push Notifications](#handle-push-notifications)
   - [API Integration](#api-integration)
   - [Troubleshooting](#troubleshooting)
 
@@ -185,7 +189,7 @@ const config: CapacitorConfig = {
     PushNotifications: {
         presentationOptions: ["badge", "sound", "alert"]
     }
-    }
+  }
 };
 
 export default config;
@@ -251,7 +255,262 @@ npx cap open ios
 
 4. In Xcode, build and run the app on an iOS device or simulator.
 
+## Compiling App
+Follow these steps:
+
+1. Open the `android/app/google-services.json` file in your project.
+2. Check the `package_name` value in the `google-services.json` file. It should match the package name specified in your project's `android/app/src/main/AndroidManifest.xml` file.
+3. Open the `android/app/src/main/AndroidManifest.xml` file and locate the `package` attribute in the `manifest` tag. Update the package name to match the one specified in the `google-services.json` file.
+
+For example, if your `google-services.json` file has the package name `com.example.myapp`, update the `AndroidManifest.xml` file like this:
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.myapp">
+    ...
+</manifest>
+```
+
+4. Open the `capacitor.config.ts` file in your project's root directory and update the `appId` property to match the package name specified in the `google-services.json` and `AndroidManifest.xml` files.
+
+```typescript
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+    appId: 'com.example.myapp',
+    // ...
+};
+
+export default config;
+```
+
+5. Open the `android/app/build.gradle` file and update the applicationId in the `defaultConfig` block to match the package name.
+
+```gradle
+defaultConfig {
+    applicationId "com.example.myapp"
+    // ...
+}
+```
+
+6. Save all the modified files.
+7. Clean the Android project by running the following command in the `android` directory:
+   
+```
+./gradlew clean
+```
+
+8. Rebuild the Android project:
+
+- For a debug build:
+```
+./gradlew assembleDebug
+```
+
+- For a release build (requires signing configuration):
+```
+./gradlew assembleRelease
+```
+The build process will start, and Gradle will compile your code, resources, and dependencies into an APK file.
+
+This command should now build the project successfully without the "No matching client found for package name" error.
+
+- Make sure that the package name you use is consistent across the `google-services.json` file, `AndroidManifest.xml` file, and `capacitor.config.ts` file.
+- If you still encounter issues after following these steps, please provide the contents of your `google-services.json` file (redact any sensitive information) and the relevant parts of your `AndroidManifest.xml` file so I can take a closer look and provide more specific guidance.
+
+Once the build is successful, you can find the generated APK file in the following location:
+
+9. Once the build is successful, you can find the generated APK file in the following location:
+
+- For a debug build:
+
+```
+/var/www/html/pulse.fgx.webally.co.za/push-test/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+- For a release build:
+
+```
+/path/to/your/project/android/app/build/outputs/apk/release/app-release.apk
+```
+Note: The exact location of the APK file may vary depending on your project's configuration.
+
+## Handle Push Notifications
+
+When I mention "handle incoming push notifications," I'm referring to the actions your app takes when it receives a push notification from the Firebase Cloud Messaging (FCM) service. There are different ways you can handle incoming push notifications in your app, depending on your app's requirements and the user experience you want to provide. Here are a few common ways to handle incoming push notifications:
+
+1. Display a notification message:
+   - When your app receives a push notification, you can display it as a system notification using the device's notification center.
+   - The notification message typically includes a title, body, and optional data payload.
+   - Users can tap on the notification to open the app or perform a specific action.
+
+2. Update the app's UI:
+   - If your app is in the foreground when a push notification is received, you can update the app's user interface in real-time to reflect the notification's content.
+   - For example, if the notification indicates a new message or an event, you can update the relevant screen or badge count in your app to notify the user.
+
+3. Perform background actions:
+   - Push notifications can trigger background actions in your app, even when the app is not actively running.
+   - For example, if the notification contains data for syncing or updating the app's content, you can handle it in the background without requiring user interaction.
+
+4. Deep linking and navigation:
+   - Push notifications can include deep links or custom data that instruct your app to navigate to a specific screen or perform a particular action when the user taps on the notification.
+   - You can parse the notification payload and use it to determine the appropriate navigation or action within your app.
+
+5. Silent notifications:
+   - FCM supports sending silent notifications, which are notifications that do not display a message to the user but are instead used to trigger background tasks or data updates in your app.
+   - Your app can listen for these silent notifications and perform the necessary actions without user intervention.
+
+To handle incoming push notifications in your app, you'll need to use the Capacitor Push Notifications plugin (https://capacitorjs.com/docs/apis/push-notifications) and configure it to listen for notifications. The plugin provides event listeners that you can use to handle different types of notifications, such as `pushNotificationReceived` and `pushNotificationActionPerformed`.
+
+In your `notification.service.ts` file, you can implement the logic to handle these events and perform the appropriate actions based on the notification payload. For example, you can display a local notification, update the app's UI, navigate to a specific screen, or trigger background tasks.
+
+Here's a simplified example of handling an incoming push notification in the `notification.service.ts` file:
+
+```typescript
+import { PushNotifications } from '@capacitor/push-notifications';
+
+// ...
+
+// Listen for incoming push notifications
+PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
+  console.log('Push notification received:', notification);
+  
+  // Display a local notification
+  PushNotifications.localNotification({
+    title: notification.title,
+    body: notification.body,
+    // ...
+  });
+  
+  // Update the app's UI or trigger other actions based on the notification payload
+  // ...
+});
+```
+
+
+
+```typescript
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications, PushNotificationSchema, PushNotificationActionPerformed, PushNotificationToken } from '@capacitor/push-notifications';
+import { Router } from '@ionic/vue-router';
+
+export class NotificationService {
+  private router: Router;
+
+  constructor(router: Router) {
+    this.router = router;
+    this.initialize();
+  }
+
+  private initialize() {
+    if (Capacitor.isNativePlatform()) {
+      // Request permission to receive push notifications
+      PushNotifications.requestPermissions().then(result => {
+        if (result.receive === 'granted') {
+          // Register with FCM
+          PushNotifications.register();
+        } else {
+          console.log('Push notification permission denied');
+        }
+      });
+
+      // Get FCM token
+      PushNotifications.addListener('registration', (token: PushNotificationToken) => {
+        console.log('FCM registration token:', token.value);
+        // TODO: Send the token to your backend server
+      });
+
+      // Handle incoming push notifications
+      PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
+        console.log('Push notification received:', notification);
+
+        // Display a notification message
+        this.displayNotification(notification);
+
+        // Update the app's UI
+        this.updateUI(notification);
+
+        // Perform background actions
+        this.performBackgroundActions(notification);
+      });
+
+      // Handle notification actions
+      PushNotifications.addListener('pushNotificationActionPerformed', (notification: PushNotificationActionPerformed) => {
+        console.log('Push notification action performed:', notification);
+
+        // Handle deep linking and navigation
+        this.handleDeepLinking(notification);
+      });
+    }
+  }
+
+  private displayNotification(notification: PushNotificationSchema) {
+    // Display the notification using the Capacitor LocalNotifications plugin
+    PushNotifications.localNotification({
+      title: notification.title,
+      body: notification.body,
+      // Add more options as needed (icon, sound, etc.)
+    });
+  }
+
+  private updateUI(notification: PushNotificationSchema) {
+    // Example: Update a badge count in the UI
+    const badgeCount = document.querySelector('.badge-count');
+    if (badgeCount) {
+      const count = parseInt(badgeCount.textContent || '0', 10) + 1;
+      badgeCount.textContent = count.toString();
+    }
+  }
+
+  private performBackgroundActions(notification: PushNotificationSchema) {
+    // Example: Sync data in the background
+    if (notification.data && notification.data.action === 'sync') {
+      // Perform background sync
+      console.log('Performing background sync');
+      // TODO: Implement your sync logic here
+    }
+  }
+
+  private handleDeepLinking(notification: PushNotificationActionPerformed) {
+    // Example: Navigate to a specific page based on the notification action
+    if (notification.actionId === 'view_order') {
+      const orderId = notification.notification.data.orderId;
+      this.router.navigate(['/orders', orderId]);
+    }
+  }
+}
+```
+
+In this example:
+
+1. The `NotificationService` class is responsible for handling push notifications.
+
+2. The `initialize` method is called when the service is instantiated. It requests permission to receive push notifications, registers with FCM, and sets up listeners for incoming notifications and notification actions.
+
+3. The `displayNotification` method is called when a push notification is received. It uses the Capacitor LocalNotifications plugin to display the notification message to the user.
+
+4. The `updateUI` method is called when a push notification is received. It demonstrates updating a badge count in the UI based on the received notification. You can customize this method to update other parts of your app's UI as needed.
+
+5. The `performBackgroundActions` method is called when a push notification is received. It checks the notification payload for a specific action (`'sync'` in this example) and performs corresponding background tasks. You can extend this method to handle different background actions based on your app's requirements.
+
+6. The `handleDeepLinking` method is called when a notification action is performed. It demonstrates navigating to a specific page in your app based on the action ID (`'view_order'` in this example) and any associated data in the notification payload.
+
+Remember to customize the code according to your app's specific requirements, integrate it with your existing services and components, and handle any additional data or actions as needed.
+
+Also, make sure to send the FCM registration token to your backend server (as mentioned in the `TODO` comment) so that your server can send push notifications to the registered devices.
+
+Note: This code assumes you have the necessary Capacitor plugins installed and configured, such as `@capacitor/push-notifications` and `@capacitor/local-notifications`.
+
+Remember to customize the notification handling logic based on your app's specific requirements and user experience goals.
+
+It's also important to handle scenarios where the user interacts with the notification, such as tapping on it to open the app or perform an action. You can use the `pushNotificationActionPerformed` event listener to handle these user actions and respond accordingly.
+
+Handling push notifications effectively involves considering the user experience, performance, and app functionality to provide a seamless and engaging experience for your app's users.
+
+
+
 ## API Integration
+
+- [API Setup](./docs/apiIntegration.md)
 
 The app integrates with a backend API for user authentication and notification handling. The API endpoints and their purposes are as follows:
 
