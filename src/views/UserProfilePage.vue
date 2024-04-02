@@ -1,3 +1,4 @@
+<!-- src/views/UserProfilePage.vue -->
 <template>
   <ion-page>
     <ion-header>
@@ -36,6 +37,8 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-footer>
+
+    <debug-code-block ref="debugCodeBlock" />
   </ion-page>
 </template>
 
@@ -44,6 +47,7 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem,
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
+import DebugCodeBlock from '@/components/DebugCodeBlock.vue';
 
 const userProfile = ref({
   id: '',
@@ -53,17 +57,29 @@ const userProfile = ref({
 });
 
 const route = useRoute();
+const debugCodeBlock = ref<InstanceType<typeof DebugCodeBlock> | null>(null);
 
 const fetchUserProfile = async () => {
   try {
     const userId = route.query.user_id;
+    debugCodeBlock.value?.addLog({
+      action: 'Fetching user profile',
+      result: `GET https://pulse.test.fgx.webally.co.za/api/user/user_details?user_id=${userId}`,
+    });
     const response = await axios.get('https://pulse.test.fgx.webally.co.za/api/user/user_details', {
       params: { user_id: userId },
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
+    debugCodeBlock.value?.addLog({
+      action: 'User profile response received',
+      result: JSON.stringify(response.data),
+    });
     userProfile.value = response.data;
   } catch (error) {
-    console.error('Failed to fetch user profile:', error);
+    debugCodeBlock.value?.addLog({
+      action: 'Failed to fetch user profile',
+      result: JSON.stringify(error),
+    });
     // Handle error, possibly redirect to login or show a message
   }
 };

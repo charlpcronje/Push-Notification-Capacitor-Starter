@@ -1,3 +1,5 @@
+<!-- eslint-disable vue/multi-word-component-names -->
+<!-- src/views/login.vue -->
 <template>
   <div class="login-container">
     <h2>Login</h2>
@@ -13,45 +15,61 @@
       <button type="submit">Login</button>
     </form>
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+    <debug-code-block ref="debugCodeBlock" />
   </div>
 </template>
 
-<script lang="ts">
-import axios from 'axios';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { AuthService } from '@/services/auth.service';
+import DebugCodeBlock from '@/components/DebugCodeBlock.vue';
 
-export default {
-  data() {
-    return {
-      email: '',
-      password: '',
-      errorMessage: '',
-    };
-  },
-  methods: {
-    async login() {
-      try {
-        const response = await AuthService.login(this.email, this.password);
+const email = ref('');
+const password = ref('');
+const errorMessage = ref('');
+const router = useRouter();
+const debugCodeBlock = ref<InstanceType<typeof DebugCodeBlock> | null>(null);
 
-        if (response.token) {
-          const token = response.token;
-          // Store the token in local storage or Vuex store for future use
-          localStorage.setItem('token', token);
+const login = async () => {
+  try {
+    debugCodeBlock.value?.addLog({
+      action: 'Logging in user',
+      result: 'Calling AuthService.login()',
+    });
+    const response = await AuthService.login(email.value, password.value);
+    debugCodeBlock.value?.addLog({
+      action: 'Login response received',
+      result: JSON.stringify(response),
+    });
 
-          // Redirect to the desired page after successful login
-          this.$router.push('/user-profile');
-        }
-      } catch (error: any) {
-        if (error.response && error.response.status === 401) {
-          this.errorMessage = 'Invalid credentials';
-        } else {
-          this.errorMessage = 'An error occurred during login';
-        }
-      }
-    },
-  },
+    if (response.token) {
+      const token = response.token;
+      debugCodeBlock.value?.addLog({
+        action: 'Storing token',
+        result: 'localStorage.setItem(\'token\', token)',
+      });
+      localStorage.setItem('token', token);
+
+      debugCodeBlock.value?.addLog({
+        action: 'Redirecting to user profile',
+        result: 'router.push(\'/user-profile\')',
+      });
+      router.push('/user-profile');
+    }
+  } catch (error: any) {
+    debugCodeBlock.value?.addLog({
+      action: 'Login error',
+      result: JSON.stringify(error),
+    });
+    if (error.response && error.response.status === 401) {
+      errorMessage.value = 'Invalid credentials';
+    } else {
+      errorMessage.value = 'An error occurred during login';
+    }
+  }
 };
-
 </script>
 
 <style scoped>
